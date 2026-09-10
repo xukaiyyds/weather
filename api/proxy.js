@@ -1,5 +1,4 @@
-export default async function handler(req, res) {
-  // 统一 CORS 头
+module.exports = async (req, res) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -7,12 +6,10 @@ export default async function handler(req, res) {
     'Cache-Control': 'public, max-age=300',
   };
 
-  // 预检请求
   if (req.method === 'OPTIONS') {
     return res.status(200).set(corsHeaders).end();
   }
 
-  // 关键修复：从 req.url 解析 pathname 和 search
   const host = req.headers.host || 'localhost';
   const url = new URL(req.url, `https://${host}`);
   const pathname = url.pathname;
@@ -30,28 +27,23 @@ export default async function handler(req, res) {
   try {
     const response = await fetch(targetUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'Referer': 'https://weather.mi.com/',
       },
     });
 
     console.log(`[Proxy] Target status: ${response.status}`);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).set(corsHeaders).json({
-        error: `Target API responded with ${response.status}`,
-        details: errorText,
-      });
-    }
-
     const data = await response.json();
     return res.status(200).set(corsHeaders).json(data);
 
   } catch (error) {
-    console.error('[Proxy] Fetch error:', error);
+    console.error('[Proxy] Fetch error:', error.name, error.message);
     return res.status(500).set(corsHeaders).json({
       error: 'Proxy request failed',
       message: error.message,
     });
   }
-}
+};

@@ -1,5 +1,8 @@
 {
-  "name": "my-proxy",
+  "name": "weather-proxy",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }
