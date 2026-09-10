@@ -1,13 +1,15 @@
 export default async function handler(req, res) {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Cache-Control': 'public, max-age=300',
-  };
+  // 统一设置 CORS 头（原生 Node.js 用 setHeader 逐个设置）
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
+  // 预检请求
   if (req.method === 'OPTIONS') {
-    return res.status(200).set(corsHeaders).end();
+    res.statusCode = 200;
+    return res.end();
   }
 
   const host = req.headers.host || 'localhost';
@@ -16,7 +18,8 @@ export default async function handler(req, res) {
   const search = url.search;
 
   if (!pathname.startsWith('/api/proxy')) {
-    return res.status(404).set(corsHeaders).json({ error: 'Not Found' });
+    res.statusCode = 404;
+    return res.end(JSON.stringify({ error: 'Not Found' }));
   }
 
   const targetPath = pathname.replace('/api/proxy', '');
@@ -37,13 +40,16 @@ export default async function handler(req, res) {
     console.log(`[Proxy] Target status: ${response.status}`);
 
     const data = await response.json();
-    return res.status(200).set(corsHeaders).json(data);
+
+    res.statusCode = 200;
+    return res.end(JSON.stringify(data));
 
   } catch (error) {
     console.error('[Proxy] Fetch error:', error.name, error.message);
-    return res.status(500).set(corsHeaders).json({
+    res.statusCode = 500;
+    return res.end(JSON.stringify({
       error: 'Proxy request failed',
       message: error.message,
-    });
+    }));
   }
 }
