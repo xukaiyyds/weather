@@ -2,7 +2,7 @@ export default {
   async fetch(request, env, ctx) {
     // 定义 CORS 头，统一设置，避免遗漏
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*', // 生产环境建议替换为你的前端域名
+      'Access-Control-Allow-Origin': 'https://weather.xukaiyyds.cn', // 生产环境建议替换为你的前端域名
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Cache-Control': 'public, max-age=300',
