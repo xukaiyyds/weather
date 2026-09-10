@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // 统一设置 CORS 头，确保任何响应都包含
+  // 统一 CORS 头
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -7,18 +7,19 @@ export default async function handler(req, res) {
     'Cache-Control': 'public, max-age=300',
   };
 
-  // 处理预检请求
+  // 预检请求
   if (req.method === 'OPTIONS') {
-    return res.status(200).setHeaders(corsHeaders).end();
+    return res.status(200).set(corsHeaders).end();
   }
 
-  // 为所有响应设置 CORS 头
-  res.setHeaders(corsHeaders);
-
-  const { pathname, search } = req;
+  // 关键修复：从 req.url 解析 pathname 和 search
+  const host = req.headers.host || 'localhost';
+  const url = new URL(req.url, `https://${host}`);
+  const pathname = url.pathname;
+  const search = url.search;
 
   if (!pathname.startsWith('/api/proxy')) {
-    return res.status(404).json({ error: 'Not Found' });
+    return res.status(404).set(corsHeaders).json({ error: 'Not Found' });
   }
 
   const targetPath = pathname.replace('/api/proxy', '');
@@ -33,27 +34,24 @@ export default async function handler(req, res) {
       },
     });
 
-    console.log(`[Proxy] Response status: ${response.status}`);
+    console.log(`[Proxy] Target status: ${response.status}`);
 
-    // 如果目标API返回错误，将错误信息一并返回
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[Proxy] Target API error: ${response.status} - ${errorText}`);
-      return res.status(response.status).json({
-        error: `Target API responded with status ${response.status}`,
+      return res.status(response.status).set(corsHeaders).json({
+        error: `Target API responded with ${response.status}`,
         details: errorText,
       });
     }
 
     const data = await response.json();
-    return res.status(200).json(data);
+    return res.status(200).set(corsHeaders).json(data);
 
   } catch (error) {
-    console.error('[Proxy] Fetch error:', error); // 关键：在Vercel日志中查看此错误
-    return res.status(500).json({
+    console.error('[Proxy] Fetch error:', error);
+    return res.status(500).set(corsHeaders).json({
       error: 'Proxy request failed',
       message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }
